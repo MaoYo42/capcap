@@ -116,6 +116,8 @@ class StatusBarController: NSObject {
             menu.addItem(NSMenuItem.separator())
         }
 
+        menu.addItem(makeDoubleTapIntervalItem())
+
         let settingsItem = NSMenuItem(title: L10n.settings, action: #selector(openSettings), keyEquivalent: ",")
         settingsItem.target = self
         settingsItem.image = Self.menuIcon(systemName: "gearshape")
@@ -132,8 +134,36 @@ class StatusBarController: NSObject {
         statusItem.menu = menu
     }
 
-    fileprivate static func menuIcon(systemName: String) -> NSImage? {
-        let config = NSImage.SymbolConfiguration(pointSize: 14, weight: .regular)
+    /// 双击 ⌘ 的两拍间隔。上游写死 0.3 秒，手慢一点就完全触发不了，
+    /// 用户只会觉得「双击没反应」。这里给一个可调档位，改完立即生效。
+    private func makeDoubleTapIntervalItem() -> NSMenuItem {
+        let item = NSMenuItem(title: L10n.doubleTapIntervalHeader, action: nil, keyEquivalent: "")
+        item.image = Self.menuIcon(systemName: "timer")
+
+        let submenu = NSMenu()
+        let current = Defaults.doubleTapInterval
+        for value in [0.25, 0.3, 0.4, 0.5, 0.6] {
+            let option = NSMenuItem(
+                title: L10n.doubleTapIntervalOption(String(format: "%.2f", value)),
+                action: #selector(doubleTapIntervalChanged(_:)),
+                keyEquivalent: ""
+            )
+            option.target = self
+            option.representedObject = value
+            option.state = abs(current - value) < 0.001 ? .on : .off
+            submenu.addItem(option)
+        }
+        item.submenu = submenu
+        return item
+    }
+
+    @objc private func doubleTapIntervalChanged(_ sender: NSMenuItem) {
+        guard let value = sender.representedObject as? Double else { return }
+        Defaults.doubleTapInterval = value
+        setupMenu()
+    }
+
+    fileprivate static func menuIcon(systemName: String) -> NSImage? {        let config = NSImage.SymbolConfiguration(pointSize: 14, weight: .regular)
         let image = NSImage(systemSymbolName: systemName, accessibilityDescription: nil)?
             .withSymbolConfiguration(config)
         image?.isTemplate = true

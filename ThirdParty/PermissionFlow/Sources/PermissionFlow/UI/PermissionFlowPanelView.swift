@@ -118,8 +118,22 @@ struct PermissionFlowPanelView: View {
 private struct HeaderDirectionIcon: View {
     let isDragging: Bool
 
-    @State private var wigglePhase = false
-    @State private var scalePhase = false
+    // `@State` is a macro whose plugin only ships with a full Xcode install.
+    // These two flags are plain get/set with no `$` binding, so the macro's
+    // expansion is written out by hand to keep the package buildable with
+    // Command Line Tools alone.
+    private var _wigglePhase = State(initialValue: false)
+    private var _scalePhase = State(initialValue: false)
+
+    private var wigglePhase: Bool {
+        get { _wigglePhase.wrappedValue }
+        nonmutating set { _wigglePhase.wrappedValue = newValue }
+    }
+
+    private var scalePhase: Bool {
+        get { _scalePhase.wrappedValue }
+        nonmutating set { _scalePhase.wrappedValue = newValue }
+    }
 
     var body: some View {
         Image(systemName: "arrowshape.up.fill")

@@ -276,6 +276,10 @@ enum L10n {
     static var colorPicker: String { s("colorPicker") }
     static var settings: String { s("settings") }
     static var quitApp: String { s("quitApp") }
+    static var doubleTapIntervalHeader: String { s("doubleTapIntervalHeader") }
+    static func doubleTapIntervalOption(_ seconds: String) -> String {
+        String(format: s("doubleTapIntervalOption"), seconds)
+    }
     static var historyMenu: String { s("historyMenu") }
     static var historyClear: String { s("historyClear") }
     static var historyCleared: String { s("historyCleared") }
@@ -931,12 +935,17 @@ struct Defaults {
     static var doubleTapInterval: TimeInterval {
         get {
             let val = defaults.double(forKey: "doubleTapInterval")
-            return val > 0 ? val : 0.3
+            return val > 0 ? val : defaultDoubleTapInterval
         }
         set {
             defaults.set(newValue, forKey: "doubleTapInterval")
         }
     }
+
+    /// 双击 ⌘ 的两拍间隔上限。上游用 0.3 秒，对多数人来说偏紧——稍慢一点就
+    /// 完全不触发，表现为「双击没反应」。0.4 秒既能接住正常手速，又不会把
+    /// 两次无关的 ⌘ 误判成双击。
+    static let defaultDoubleTapInterval: TimeInterval = 0.4
 
     // Custom screenshot hotkey. When the key is absent, no custom hotkey is set
     // (fall back to double-tap ⌘). keyCode 0 is a valid value — it is the `A` key

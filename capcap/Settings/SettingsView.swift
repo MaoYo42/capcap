@@ -80,6 +80,9 @@ class SettingsView: NSView {
     var onMenuBarToggle: ((Bool) -> Void)?
     var onLaunch: (() -> Void)?
 
+    /// 启动模式下权限一旦齐全就自动放行，避免重复点击「启动应用」。
+    private var autoLaunchTriggered = false
+
     // Switches
     private var menuBarSwitch: NSSwitch!
     private var launchAtLoginSwitch: NSSwitch!
@@ -3048,6 +3051,15 @@ class SettingsView: NSView {
         // regular-mode Quit button stays enabled.
         if isStartup {
             refreshBottomAction()
+            // 用户在对话框里把最后一项权限勾上之后，自动进入工作状态，
+            // 不需要再手动点一次「启动应用」。
+            if accessibilityGranted, screenRecordingGranted, !autoLaunchTriggered {
+                autoLaunchTriggered = true
+                DispatchQueue.main.async { [weak self] in
+                    guard let self, self.isStartup else { return }
+                    self.launchClicked()
+                }
+            }
         }
     }
 

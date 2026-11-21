@@ -121,7 +121,15 @@ final class UpdateChecker {
     /// state. Manual checks ignore the screenshot-shortcut gate and the
     /// skipped-version preference; a background check stays silent about a
     /// skipped version.
+    /// 本地自编译版本不再向上游检查更新：否则一旦上游发布新版本，就会把
+    /// 我们自己改过的 .app 覆盖掉。需要更新时请重新构建本仓库。
+    private static let updatesDisabled = true
+
     func check(manual: Bool, completion: ((UpdateState) -> Void)? = nil) {
+        guard !Self.updatesDisabled else {
+            completion?(.idle)
+            return
+        }
         guard !isBusy else {
             completion?(state)
             return

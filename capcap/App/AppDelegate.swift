@@ -31,12 +31,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        installMainMenu()
         registerShareHandoffObserver()
         clipboardTextHistoryMonitor.start()
 
         if appInitialized {
             flushPendingOpenImageURLs()
-        } else if LaunchAtLogin.isEnabled && AppPermissions.allRequiredGranted {
+        } else if AppPermissions.allRequiredGranted {
+            // 权限齐全就直接进入工作状态。上游这里还要求「开机自启已开启」，
+            // 于是每次重新打开应用都会先弹一个「启动应用」对话框，双击 ⌘ 在
+            // 点击之前完全没反应——这正是最常见的「装了但用不了」。
             initializeApp()
             flushPendingOpenImageURLs()
         } else if !pendingOpenImageURLs.isEmpty {
@@ -45,6 +49,25 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         } else {
             showStartupDialog()
         }
+    }
+
+    /// 菜单栏常驻应用（LSUIElement）默认没有主菜单，⌘Q 因此不会被投递到本进程，
+    /// 用户按 ⌘Q 只会退出当前最前面的那个 app。这里补一个最小主菜单，让设置窗口
+    /// 在前台时 ⌘Q / ⌘W 能正常作用于 capcap 自己。
+    private func installMainMenu() {
+        let mainMenu = NSMenu()
+        let appMenuItem = NSMenuItem()
+        mainMenu.addItem(appMenuItem)
+
+        let appMenu = NSMenu(title: "capcap")
+        appMenu.addItem(
+            withTitle: L10n.quitApp,
+            action: #selector(NSApplication.terminate(_:)),
+            keyEquivalent: "q"
+        )
+        appMenuItem.submenu = appMenu
+
+        NSApp.mainMenu = mainMenu
     }
 
     func applicationWillTerminate(_ notification: Notification) {

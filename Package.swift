@@ -20,6 +20,13 @@ let package = Package(
             name: "PermissionFlow",
             dependencies: ["SystemSettingsKit"],
             path: "ThirdParty/PermissionFlow/Sources/PermissionFlow",
+            // PermissionFlowButton.swift is a SwiftUI convenience wrapper that
+            // capcap never instantiates, and it relies on the `@StateObject`
+            // macro. That macro's plugin (libSwiftUIMacros.dylib) only ships
+            // with a full Xcode install, so building with Command Line Tools
+            // alone fails on it. Dropping the unused file keeps the package
+            // buildable without Xcode.
+            exclude: ["PermissionFlowButton.swift"],
             resources: [
                 .process("Resources")
             ]

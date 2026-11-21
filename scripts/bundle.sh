@@ -47,7 +47,7 @@ EXTENSION_RESOURCES="$EXTENSION_CONTENTS/Resources"
 
 # Use identical options for the build and SwiftPM's output-path query so app,
 # extension, and resources always come from the current build system's output.
-SWIFT_BUILD_ARGS=(-c "$CONFIG" "${SWIFT_SDK_ARGS[@]}")
+SWIFT_BUILD_ARGS=(-c "$CONFIG" --disable-sandbox "${SWIFT_SDK_ARGS[@]}")
 if [ "$UNIVERSAL" = "1" ]; then
     echo "Building capcap ($CONFIG, universal: arm64 + x86_64)..."
     SWIFT_BUILD_ARGS+=(--arch arm64 --arch x86_64)

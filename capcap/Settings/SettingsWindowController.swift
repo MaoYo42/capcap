@@ -68,11 +68,38 @@ class SettingsWindowController: NSWindowController {
         isStartup = true
         settingsView.setStartupMode(true)
         resizeWindow(height: 600)
-        window?.center()
+        centerOnActiveScreen(force: true)
         resetInitialFocus()
         showWindow(nil)
         resetInitialFocus()
         NSApp.activate(ignoringOtherApps: true)
+    }
+
+    /// 多显示器时 `NSWindow.center()` 会按窗口当前所在的那块屏居中，结果常常
+    /// 落在副屏角落，用户以为窗口没打开。启动对话框强制居中到鼠标所在的那块屏；
+    /// 常规设置窗口只在「不在任何屏幕可见区域」时才挪回来，避免抢用户摆好的位置。
+    private func centerOnActiveScreen(force: Bool = false) {
+        guard let window else { return }
+        let frame = window.frame
+        if !force {
+            let onSomeScreen = NSScreen.screens.contains {
+                $0.visibleFrame.intersects(frame.insetBy(dx: 60, dy: 60))
+            }
+            guard !onSomeScreen else { return }
+        }
+
+        let mouse = NSEvent.mouseLocation
+        let screen = NSScreen.screens.first { NSMouseInRect(mouse, $0.frame, false) }
+            ?? NSScreen.main
+        guard let screen else {
+            window.center()
+            return
+        }
+        let visible = screen.visibleFrame
+        var target = frame
+        target.origin.x = visible.midX - target.width / 2
+        target.origin.y = visible.midY - target.height / 2
+        window.setFrame(target, display: true, animate: false)
     }
 
     func showAsSettings(focusingPermissions: Bool? = nil) {
@@ -83,6 +110,7 @@ class SettingsWindowController: NSWindowController {
             settingsView.showPermissionsTab()
         }
         resizeWindow(height: 560)
+        centerOnActiveScreen()
         resetInitialFocus()
         showWindow(nil)
         resetInitialFocus()
