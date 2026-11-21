@@ -770,3 +770,7 @@
 "doubleTapIntervalHeader" = "双击 ⌘ 间隔";
 
 "doubleTapIntervalOption" = "%@ 秒";
+
+"autoCopyAfterCapture" = "选区完成后自动复制到剪贴板";
+
+"autoCopyAfterCaptureHint" = "松开鼠标即复制并结束，不用再按回车。需要先标注请关掉此项。";

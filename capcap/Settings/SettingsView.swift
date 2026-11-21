@@ -273,6 +273,9 @@ class SettingsView: NSView {
     private var showCopyToastTitleLabel: NSTextField!
     private var showCopyToastSubtitleLabel: NSTextField!
     private var showCopyToastSwitch: NSSwitch!
+    private var autoCopyAfterCaptureTitleLabel: NSTextField!
+    private var autoCopyAfterCaptureSubtitleLabel: NSTextField!
+    private var autoCopyAfterCaptureSwitch: NSSwitch!
     private var langTitleLabel: NSTextField!
     private var historyCacheToggleTitleLabel: NSTextField!
     private var historyCacheToggleHintLabel: NSTextField?
@@ -813,6 +816,27 @@ class SettingsView: NSView {
 
         buildCountdownCard(into: capture)
         buildWindowShadowCard(into: capture)
+
+        // 选区完成后自动复制
+        let autoCopyCard = CardView()
+        let autoCopyInner = verticalInnerStack()
+        autoCopyCard.addSubview(autoCopyInner)
+        pin(autoCopyInner, to: autoCopyCard, insets: NSEdgeInsets(top: 6, left: 14, bottom: 6, right: 14))
+        let autoCopy = makeToggleRow(
+            title: L10n.autoCopyAfterCapture,
+            subtitle: L10n.autoCopyAfterCaptureHint,
+            isOn: Defaults.autoCopyAfterCapture,
+            action: #selector(autoCopyAfterCaptureToggled(_:))
+        )
+        autoCopyAfterCaptureTitleLabel = autoCopy.title
+        autoCopyAfterCaptureSubtitleLabel = autoCopy.subtitle
+        autoCopyAfterCaptureSwitch = autoCopy.toggle
+        autoCopyInner.addArrangedSubview(autoCopy.row)
+        autoCopy.row.widthAnchor.constraint(equalTo: autoCopyInner.widthAnchor).isActive = true
+
+        capture.addArrangedSubview(autoCopyCard)
+        autoCopyCard.widthAnchor.constraint(equalTo: capture.widthAnchor).isActive = true
+
         let pinCard = CardView()
         let pinInner = verticalInnerStack()
         pinCard.addSubview(pinInner)
@@ -3322,6 +3346,10 @@ class SettingsView: NSView {
         Defaults.showCopyToast = sender.state == .on
     }
 
+    @objc private func autoCopyAfterCaptureToggled(_ sender: NSSwitch) {
+        Defaults.autoCopyAfterCapture = sender.state == .on
+    }
+
     @objc private func pinAcrossSpacesToggled(_ sender: NSSwitch) {
         Defaults.pinAcrossSpaces = sender.state == .on
     }
@@ -5329,6 +5357,9 @@ class SettingsView: NSView {
         showCopyToastTitleLabel?.stringValue = L10n.showCopyToast
         showCopyToastSubtitleLabel?.stringValue = L10n.showCopyToastHint
         showCopyToastSwitch?.state = Defaults.showCopyToast ? .on : .off
+        autoCopyAfterCaptureTitleLabel?.stringValue = L10n.autoCopyAfterCapture
+        autoCopyAfterCaptureSubtitleLabel?.stringValue = L10n.autoCopyAfterCaptureHint
+        autoCopyAfterCaptureSwitch?.state = Defaults.autoCopyAfterCapture ? .on : .off
         langTitleLabel?.stringValue = L10n.languageHeader
         filenameRuleCard?.refreshLocalization()
         screenshotQualityTitleLabel?.stringValue = L10n.screenshotQualityTitle

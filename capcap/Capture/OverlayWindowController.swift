@@ -794,6 +794,10 @@ class OverlayWindowController {
             if self?.editController?.handleAnnotationClipboardShortcutFromKeyboard(for: event) == true {
                 return nil
             }
+            // 没选中标注时，⌘C 当作「确认并复制」。
+            if self?.editController?.handleImageCopyShortcutFromKeyboard(for: event) == true {
+                return nil
+            }
             if self?.editController?.nudgeSelectedAnnotationFromKeyboard(for: event) == true {
                 return nil
             }
@@ -1732,7 +1736,8 @@ extension OverlayWindowController: SelectionViewDelegate {
                 preSnapshot: preSnapshot,
                 overrideBaseImage: presetImage,
                 windowBaseImage: snapshotImage,
-                isWindowCapture: true
+                isWindowCapture: true,
+                autoConfirm: true
             )
             editController?.attachWindowCapturePreparation(preparation)
             return
@@ -1830,7 +1835,8 @@ extension OverlayWindowController: SelectionViewDelegate {
                 preSnapshot: preSnapshot,
                 overrideBaseImage: presetImage,
                 windowBaseImage: windowBaseImage,
-                isWindowCapture: shouldApplyWindowEffects
+                isWindowCapture: shouldApplyWindowEffects,
+                autoConfirm: true
             )
         case .quickPin, .textRecognition, .copyImageText, .screenshotTranslation:
             completeImmediateAction(request, preSnapshot: preSnapshot, windowBaseImage: windowBaseImage)
@@ -1903,7 +1909,8 @@ extension OverlayWindowController: SelectionViewDelegate {
         preSnapshot: CGImage?,
         overrideBaseImage: NSImage?,
         windowBaseImage: NSImage?,
-        isWindowCapture: Bool
+        isWindowCapture: Bool,
+        autoConfirm: Bool = false
     ) {
         activeEditorContext = ActiveEditorContext(
             captureRect: captureRect,
@@ -1935,6 +1942,13 @@ extension OverlayWindowController: SelectionViewDelegate {
             self?.onComplete(finalImage)
         }
         editController?.show()
+
+        if autoConfirm {
+            // 等编辑器布局完成再确认，否则合成图还没准备好。
+            DispatchQueue.main.async { [weak self] in
+                self?.editController?.autoCopyAfterCaptureIfNeeded()
+            }
+        }
     }
 
     private func switchHistoryImageFromKeyboard(for event: NSEvent) -> Bool {

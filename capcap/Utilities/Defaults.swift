@@ -105,6 +105,8 @@ enum L10n {
     static var pinAcrossSpacesHint: String { s("pinAcrossSpacesHint") }
     static var showCopyToast: String { s("showCopyToast") }
     static var showCopyToastHint: String { s("showCopyToastHint") }
+    static var autoCopyAfterCapture: String { s("autoCopyAfterCapture") }
+    static var autoCopyAfterCaptureHint: String { s("autoCopyAfterCaptureHint") }
     static var historyCacheToggleLabel: String { s("historyCacheToggleLabel") }
     static var historyCacheToggleHint: String { s("historyCacheToggleHint") }
     static var clipboardTextCacheToggleLabel: String { s("clipboardTextCacheToggleLabel") }
@@ -2504,6 +2506,21 @@ struct Defaults {
         }
         set {
             defaults.set(newValue, forKey: "showCopyToast")
+        }
+    }
+
+    /// 选区一确定就把截图复制到剪贴板并结束，等同自动按一次 Enter。
+    /// 默认开启：双击 ⌘ 截图后可以直接 ⌘V，不用再回编辑器确认。
+    /// 需要标注时在「设置 → 截图与粘贴」里关掉即可。
+    static var autoCopyAfterCapture: Bool {
+        get {
+            if defaults.object(forKey: "autoCopyAfterCapture") == nil {
+                return true
+            }
+            return defaults.bool(forKey: "autoCopyAfterCapture")
+        }
+        set {
+            defaults.set(newValue, forKey: "autoCopyAfterCapture")
         }
     }
 

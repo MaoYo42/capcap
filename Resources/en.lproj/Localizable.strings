@@ -770,3 +770,7 @@
 "doubleTapIntervalHeader" = "Double-⌘ Interval";
 
 "doubleTapIntervalOption" = "%@ s";
+
+"autoCopyAfterCapture" = "Copy to clipboard right after selecting";
+
+"autoCopyAfterCaptureHint" = "Finishes the capture as soon as the selection is made, so the image is ready to paste. Turn off if you want to annotate first.";

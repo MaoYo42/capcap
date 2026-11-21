@@ -197,6 +197,8 @@ class EditWindowController {
     private var windowCaptureObserver: UUID?
     private var pendingWindowCaptureAction: ToolbarItemID?
     private var windowCaptureWaitAlert: NSAlert?
+    /// 「选区完成后自动复制」在窗口截图路径上需要等合成图就绪再确认。
+    private var pendingAutoCopy = false
 
     private var isPreparingWindowCapture: Bool {
         windowCapturePreparation?.isComplete == false
@@ -393,6 +395,12 @@ class EditWindowController {
         // annotation gesture may be in progress while the worker completes.
         if let alert = windowCaptureWaitAlert {
             alert.window.sheetParent?.endSheet(alert.window, returnCode: .OK)
+        }
+        // 「选区完成后自动复制」在窗口截图时不能立刻确认：那时窗口图还没回来，
+        // confirm() 会弹一个「正在准备」的模态 sheet。改成等图到位再确认。
+        if pendingAutoCopy {
+            pendingAutoCopy = false
+            DispatchQueue.main.async { [weak self] in self?.confirm() }
         }
     }
 
@@ -2818,6 +2826,33 @@ class EditWindowController {
         return canvasView?.handleAnnotationClipboardShortcutFromKeyboard(for: event) ?? false
     }
 
+    /// ⌘C：没有选中标注、也不在文字编辑时，把整张截图复制到剪贴板并结束，
+    /// 等价于按 Enter。选中了标注时走上面的标注复制，不受影响。
+    func handleImageCopyShortcutFromKeyboard(for event: NSEvent) -> Bool {
+        guard !isWaitingForWindowCaptureOutput else { return false }
+        guard !isScrollCaptureBusy, !isCropping, !isTextEditing else { return false }
+        let modifiers = event.modifierFlags.intersection([.command, .shift, .option, .control])
+        guard modifiers == .command else { return false }
+        guard event.charactersIgnoringModifiers?.lowercased() == "c" else { return false }
+        confirmFromKeyboard()
+        return true
+    }
+
+    /// 选区一确定就把图送进剪贴板（走和按 Enter 完全相同的管线：
+    /// 画质编码、历史记录、复制提示），然后关闭编辑器。
+    /// 窗口截图需要等截图结果回来，`confirm()` 内部会自己排队，不会丢。
+    func autoCopyAfterCaptureIfNeeded() {
+        guard Defaults.autoCopyAfterCapture else { return }
+        guard !isScrollCaptureBusy, !isCropping, !isTextEditing else { return }
+        if isPreparingWindowCapture {
+            // 窗口图还在合成，等 applyPreparedWindowImage 回来再确认，
+            // 否则会先弹出一个「正在准备」的模态 sheet。
+            pendingAutoCopy = true
+            return
+        }
+        confirm()
+    }
+
     func nudgeSelectedAnnotationFromKeyboard(for event: NSEvent) -> Bool {
         guard !isScrollCaptureBusy, !isCropping else { return false }
         if let view = subToolbarView as? SpotlightSubToolbar,
@@ -2888,6 +2923,7 @@ class EditWindowController {
         finishBeautifyShadowSizeAdjustment(repositionChrome: false)
         detachWindowCapturePreparation()
         pendingWindowCaptureAction = nil
+        pendingAutoCopy = false
         if let alert = windowCaptureWaitAlert {
             windowCaptureWaitAlert = nil
             alert.window.sheetParent?.endSheet(alert.window, returnCode: .cancel)
